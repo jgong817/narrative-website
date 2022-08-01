@@ -1,65 +1,362 @@
 <!DOCTYPE html>
 <html>
+<head>
+<!-- Load d3.js -->
 <script src='https://d3js.org/d3.v5.min.js'></script>
-<style> circle {fill: lightblue; stroke: black;} </style>
-<body onload='init()'>
-<svg width=300 height=300>
-</svg>
-<script>
-async function init() {
 
-var width = 200;
-var height = 200;
+<!-- Load d3-annotation -->
+<script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
 
-d3.csv("https://flunky.github.io/cars2017.csv").then(function(data) {
-  // Plot the Average City MPG horizontally on a logarithmic scale.
-  var x = d3.scaleLog()
-    .domain([10, 150]) // Set the logarithmic scales to base 10, over a domain from 10 to 150.
-    .range([0, width]);
-  // Plot the Average Hightway MPG vertically on a logarithmic scale.
-  var y = d3.scaleLog()
-    .domain([10, 150]) // Set the logarithmic scales to base 10, over a domain from 10 to 150.
-    .range([height, 0]);
-
-
-  // Set the radius of each circle to 2 plus the number of cylinders for that entry.
-  d3.select("svg").append('g').attr('transform', 'translate(50,50)')
-    .selectAll("dot")
-    .data(data)
-    .enter()
-    .append("circle")
-      .attr("cx", function (d) { return x(+d.AverageCityMPG); } )
-      .attr("cy", function (d) { return y(+d.AverageHighwayMPG); } )
-      .attr("r", function (d) {return +d.EngineCylinders + 2} )
-
-  d3.select("svg").append("g")
-    .attr("transform","translate(50,50)")
-    .call(d3.axisLeft(y)
-      .tickValues([10,20,50,100])
-      .tickFormat(d3.format("~s"))
-    );
-
-  d3.select("svg").append("g")
-    .attr("transform", "translate(50,250)")
-    .call(d3.axisBottom(x)
-      .tickValues([10,20,50,100])
-      .tickFormat(d3.format("~s"))
-    );
-
-})
-
+<style>
+h1 {
+font-family: courier;
 }
-</script>
+p {
+margin: 25px 200px;
+font-family: courier;
+height: 100px;
+}
+circle {fill: lightgreen; stroke: black;}
+button {
+background-color: #D3D3D3; /* Light Gray */
+color: black;
+}
+button:hover {
+background-color: #e7e7e7; /* Gray */
+color: black;
+box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+}
+.overlay {
+				fill: none;
+				pointer-events: all;
+		}
+		.focus circle {
+				fill: steelblue;
+		}
+		.focus text {
+				font-size: 14px;
+		}
+		.tooltip {
+				fill: white;
+				stroke: #000;
+		}
+		.tooltip-date, .tooltip-co2, .tooltip-cpc {
+				font-weight: bold;
+		}
+</style>
+</head>
 
-<button onclick="submit()">
-	Button
+<h1 align="center">
+United States Carbon Emissions Since 1800
+</h1>
+
+<div align="center">
+<body onload='init()'>
+<div>
+<p id="myPP" align="left">
+Oopsie woopsie uwu I made a faqui waqui
+</p>
+</div>
+<div align="center">
+<button onclick="submit(1)" class='btn'>
+1
 </button>
 
+<button onclick="submit(2)" class='btn'>
+2
+</button>
+
+<button onclick="submit(3)" class='btn'>
+3
+</button>
+</div>
+<svg width=1050 height=425></svg>
+<div id="tooltip"></div>
 <script>
-function submit() {
-	return
+
+df = d3.csv("https://nyc3.digitaloceanspaces.com/owid-public/data/co2/owid-co2-data.csv")
+
+var width = 900;
+height = 300;
+margin = 50;
+tooltip = { width: 100, height: 100, x: 10, y: -30 };
+
+var x = d3.scaleLinear()
+.domain([1800, 2040])
+.range([0, width]);
+var y = d3.scaleLinear()
+.domain([0, 6500])
+.range([height, 0]);
+
+async function init() {
+// Set up axes
+d3.select("svg").append("g")
+.attr("transform","translate("+margin+","+margin+")")
+.call(d3.axisLeft(y)
+.tickValues([0,1000,2000,3000,4000,5000,6000])
+.tickFormat(d3.format("~s"))
+);
+d3.select("svg").append("g")
+.attr("transform", "translate("+margin+","+(height+margin)+")")
+.call(d3.axisBottom(x)
+.tickValues([1800,1820,1840,1860,1880,1900,1920,1940,1960,1980,2000,2020])
+.tickFormat(d3.format("d"))
+);
+
+// Initialize first scene
+submit(1);
+}
+
+function ligma(scene) {
+// Define scene boundaries
+df.then(function(raw) {
+var target = 2020;
+if (scene == 1) {
+target = 1900;
+};
+if (scene == 2) {
+target = 1990;
+};
+data = raw.filter(function(row) {
+return ((row['iso_code'] == 'USA') && (row['year'] <= target));
+});
+
+// Draw scene
+d3.select("svg").append('g')
+.attr("transform", "translate("+margin+","+margin+")")
+.attr("class","scene")
+.append("path")
+.datum(data)
+.attr("fill", "none")
+.attr("stroke", "steelblue")
+.attr("stroke-width", 1.5)
+.attr("d", d3.line()
+.x(function(d) { return x(d.year) })
+.y(function(d) { return y(d.co2) })
+)
+.style("opacity", 0).transition().duration(400).style("opacity", 1)
+
+// Annotations
+
+						var bisect = d3.bisector(function(d) { return d.year; }).left;
+
+var annotations = []
+
+if (scene==1) {
+annotations = [
+{
+		note: {
+			label: "First oil refinery erected in the US",
+		},
+		x: x(1853),
+		y: y(data[bisect(data, 1853)].co2),
+		dy: -25,
+		dx: -25
+},
+{
+		note: {
+			label: "Invention of the automobile",
+		},
+		x: x(1886),
+		y: y(data[bisect(data, 1886)].co2),
+		dy: -75,
+		dx: -75
+},
+]
+};
+
+if (scene==2) {
+annotations = [
+{
+		note: {
+			label: "WW1 Begins",
+		},
+		x: x(1914),
+		y: y(data[bisect(data, 1914)].co2),
+		dy: 20,
+		dx: 20
+},
+{
+		note: {
+			label: "The Great Depression",
+		},
+		x: x(1929),	
+		y: y(data[bisect(data, 1929)].co2),
+		dy: -20,
+		dx: -20
+},
+{
+		note: {
+			label: "WW2 Begins",
+		},
+		x: x(1939),
+		y: y(data[bisect(data, 1939)].co2),
+		dy: 36,
+		dx: 36
+},
+{
+		note: {
+			label: "Cuban Missile Crisis",
+		},
+		x: x(1962),
+		y: y(data[bisect(data, 1962)].co2),
+		dy: 25,
+		dx: 25
+},
+{
+		note: {
+			label: "Energy crisis",
+		},
+		x: x(1979),
+		y: y(data[bisect(data, 1979)].co2),
+		dy: -25,
+		dx: -25
+}
+]
+};
+
+if (scene==3) {
+annotations = [
+{
+		note: {
+			label: "Outbreak of COVID-19",
+		},
+		x: x(2020),
+		y: y(data[bisect(data, 2020)].co2),
+		dy: 100,
+		dx: -100
+},
+{
+		note: {
+			label: "Paris Climate Accords signed",
+		},
+		x: x(2016),
+		y: y(data[bisect(data, 2016)].co2),
+		dy: -10,
+		dx: 10
+},
+{
+		note: {
+			label: "Housing Crisis",
+		},
+		x: x(2008),
+		y: y(data[bisect(data, 2008)].co2),
+		dy: -40,
+		dx: 40
+}
+]
+};
+
+const makeAnnotations = d3.annotation()
+.annotations(annotations)
+d3.select("svg")
+.append("g")
+.attr("class", "scene")
+.attr("transform", "translate("+margin+","+margin+")")
+.call(makeAnnotations)
+
+// Tooltip
+var bisectDate = d3.bisector(function(d) { return d.year; }).left
+
+var focus = d3.select("svg").append("g")
+.attr("transform", "translate("+margin+","+margin+")")
+						.attr("class", "focus")
+						.style("display", "none");
+
+				focus.append("circle")
+						.attr("r", 5);
+
+				focus.append("rect")
+						.attr("class", "tooltip")
+						.attr("width", 150)
+						.attr("height", 75)
+						.attr("x", 10)
+						.attr("y", -22)
+						.attr("rx", 4)
+						.attr("ry", 4);
+
+				focus.append("text")
+						.attr("class", "tooltip-date")
+						.attr("x", 18)
+						.attr("y", -2);
+
+				focus.append("text")
+						.attr("x", 18)
+						.attr("y", 18)
+						.text("Total CO2:");
+
+				focus.append("text")
+						.attr("class", "tooltip-co2")
+						.attr("x", 100)
+						.attr("y", 18);
+
+				focus.append("text")
+						.attr("x", 18)
+						.attr("y", 38)
+						.text("CO2/Capita:");
+
+				focus.append("text")
+						.attr("class", "tooltip-cpc")
+						.attr("x", 100)
+						.attr("y", 38);
+
+				d3.select("svg").append("rect")
+				.attr("transform", "translate("+margin+","+margin+")")
+						.attr("class", "overlay")
+						.attr("width", width)
+						.attr("height", height)
+						.on("mouseover", function() { focus.style("display", null); })
+						.on("mouseout", function() { focus.style("display", "none"); })
+						.on("mousemove", mousemove);
+
+				// Update tooltip to follow mouse
+				function mousemove() {
+				try {
+						var x0 = x.invert(d3.mouse(this)[0]),
+								i = bisectDate(data, x0, 1),
+								d0 = data[i - 1],
+								d1 = data[i],
+								d = x0 - d0.year > d1.year - x0 ? d1 : d0;
+						focus.attr("transform", "translate(" + (x(d.year)+margin) + "," + (y(d.co2)+margin) + ")")
+						.style("opacity", 1);
+						focus.select(".tooltip-date").text(d.year);
+						focus.select(".tooltip-co2").text(d.co2);
+						focus.select(".tooltip-cpc").text(d.co2_per_capita);
+				}
+				catch (err) {
+				focus.style("opacity", 0)
+				}
+				}
+});
+
+}
+
+function submit(scene) {
+// Button submissions to switch scenes
+d3.select("svg").selectAll(".scene").transition().duration(400).style("opacity", 0);
+ligma(scene);
+
+elements = document.getElementsByClassName('btn');
+for (var i = 0; i < elements.length; i++) {
+elements[i].style.backgroundColor="#D3D3D3";
+elements[i].disabled = false;
+}
+elements[scene-1].disabled = true;
+elements[scene-1].style.backgroundColor="gray";
+
+var text = ""
+if (scene == 1) {
+text = "Ever-increasing carbon emissions in the United States are at the epicenter of the sustainability crisis. To understand our impact on the environment, it helps to contextualize the growth of our carbon footprint with key events that have transpired over the past couple of centuries.\n\nAs the United States entered the 19th century, developments such as the agricultural revolution and the industrial revolution allowed for rapid technological development."
+};
+if (scene == 2) {
+text = "The 20th century saw the US rise as a global leader in the wake of the two bloodiest onslaughts mankind has witnessed in modern history. In order to emerge victorious in these conflicts, the US leveraged the unrivaled might of its industrial machine. Gasoline and diesel demands skyrocket, resulting in hundreds of oil refineries being erected to meet them. Toward the end of the century, major global recessions brought on by the energy crisis stunt the country's carbon production, albeit temporarily."
+};
+if (scene == 3) {
+text = "With its industrialization coming to maturation, the US's carbon footprint begins to plateau. Major economic downturns associated with the housing market crash and the onset of COVID-19 accelerates its decline. With new climate regulations and sustainable energy technologies/ventures on the horizon such as blue/green hydrogen, biofuels, and carbon capture, there are prospects of carbon neutrality over the next century.\n"
+}
+document.getElementById("myPP").innerHTML = text
 }
 </script>
-
+</div>
 </body>
 </html>
