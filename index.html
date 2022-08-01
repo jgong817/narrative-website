@@ -8,41 +8,44 @@
 <script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
 
 <style>
-h1 {
-font-family: courier;
-}
-p {
-margin: 25px 200px;
-font-family: courier;
-height: 100px;
-}
-circle {fill: lightgreen; stroke: black;}
-button {
-background-color: #D3D3D3; /* Light Gray */
-color: black;
-}
-button:hover {
-background-color: #e7e7e7; /* Gray */
-color: black;
-box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
-}
-.overlay {
-				fill: none;
-				pointer-events: all;
-		}
-		.focus circle {
-				fill: steelblue;
-		}
-		.focus text {
-				font-size: 14px;
-		}
-		.tooltip {
-				fill: white;
-				stroke: #000;
-		}
-		.tooltip-date, .tooltip-co2, .tooltip-cpc {
-				font-weight: bold;
-		}
+	h1 {
+		font-family: courier;
+	}
+	p {
+		margin: 25px 200px;
+		font-family: courier;
+		height: 100px;
+	}
+	circle {fill: lightgreen; stroke: black;}
+	button {
+		background-color: #D3D3D3; /* Light Gray */
+		color: black;
+	}
+	button:hover {
+		background-color: #e7e7e7; /* Gray */
+		color: black;
+		box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+	}
+	.label {
+		color: gray;
+	}
+	.overlay {
+		fill: none;
+		pointer-events: all;
+	}
+	.focus circle {
+		fill: steelblue;
+	}
+	.focus text {
+		font-size: 14px;
+	}
+	.tooltip {
+		fill: white;
+		stroke: #000;
+	}
+	.tooltip-date, .tooltip-co2, .tooltip-cpc {
+		font-weight: bold;
+	}
 </style>
 </head>
 
@@ -54,21 +57,21 @@ United States Carbon Emissions Since 1800
 <body onload='init()'>
 <div>
 <p id="myPP" align="left">
-Oopsie woopsie uwu I made a faqui waqui
+	Load error, please reopen.
 </p>
 </div>
 <div align="center">
-<button onclick="submit(1)" class='btn'>
-1
-</button>
+	<button onclick="submit(1)" class='btn'>
+	1
+	</button>
 
-<button onclick="submit(2)" class='btn'>
-2
-</button>
+	<button onclick="submit(2)" class='btn'>
+	2
+	</button>
 
-<button onclick="submit(3)" class='btn'>
-3
-</button>
+	<button onclick="submit(3)" class='btn'>
+	3
+	</button>
 </div>
 <svg width=1050 height=425></svg>
 <div id="tooltip"></div>
@@ -77,31 +80,45 @@ Oopsie woopsie uwu I made a faqui waqui
 df = d3.csv("https://nyc3.digitaloceanspaces.com/owid-public/data/co2/owid-co2-data.csv")
 
 var width = 900;
-height = 300;
-margin = 50;
-tooltip = { width: 100, height: 100, x: 10, y: -30 };
+	height = 300;
+	margin = 50;
+	tooltip = { width: 100, height: 100, x: 10, y: -30 };
 
 var x = d3.scaleLinear()
-.domain([1800, 2040])
-.range([0, width]);
+	.domain([1800, 2040])
+	.range([0, width]);
 var y = d3.scaleLinear()
-.domain([0, 6500])
-.range([height, 0]);
+	.domain([0, 6500])
+	.range([height, 0]);
 
 async function init() {
 // Set up axes
 d3.select("svg").append("g")
-.attr("transform","translate("+margin+","+margin+")")
-.call(d3.axisLeft(y)
-.tickValues([0,1000,2000,3000,4000,5000,6000])
-.tickFormat(d3.format("~s"))
+	.attr("transform","translate("+margin+","+margin+")")
+	.call(d3.axisLeft(y)
+	.tickValues([0,1000,2000,3000,4000,5000,6000])
+	.tickFormat(d3.format("~s"))
 );
 d3.select("svg").append("g")
-.attr("transform", "translate("+margin+","+(height+margin)+")")
-.call(d3.axisBottom(x)
-.tickValues([1800,1820,1840,1860,1880,1900,1920,1940,1960,1980,2000,2020])
-.tickFormat(d3.format("d"))
+	.attr("transform", "translate("+margin+","+(height+margin)+")")
+	.call(d3.axisBottom(x)
+	.tickValues([1800,1820,1840,1860,1880,1900,1920,1940,1960,1980,2000,2020])
+	.tickFormat(d3.format("d"))
 );
+d3.select("svg").append("text")
+	.attr("transform","translate("+margin+","+margin+")")
+	.attr("class", "label")
+	.attr("text-anchor", "end")
+	.attr("x", width)
+	.attr("y", height - 6)
+	.text("Year");
+d3.select("svg").append("text")
+    .attr("class", "label")
+    .attr("text-anchor", "end")
+    .attr("y", 6)
+    .attr("dy", ".75em")
+    .attr("transform", ["translate("+margin+","+margin+")", "rotate(-90)"])
+    .text("CO2 Emissions (Million Tons)");
 
 // Initialize first scene
 submit(1);
@@ -110,57 +127,57 @@ submit(1);
 function ligma(scene) {
 // Define scene boundaries
 df.then(function(raw) {
-var target = 2020;
-if (scene == 1) {
-target = 1900;
+	var target = 2020;
+	if (scene == 1) {
+		target = 1900;
 };
 if (scene == 2) {
-target = 1990;
-};
+		target = 1990;
+	};
 data = raw.filter(function(row) {
 return ((row['iso_code'] == 'USA') && (row['year'] <= target));
 });
 
 // Draw scene
 d3.select("svg").append('g')
-.attr("transform", "translate("+margin+","+margin+")")
-.attr("class","scene")
-.append("path")
-.datum(data)
-.attr("fill", "none")
-.attr("stroke", "steelblue")
-.attr("stroke-width", 1.5)
-.attr("d", d3.line()
-.x(function(d) { return x(d.year) })
-.y(function(d) { return y(d.co2) })
+	.attr("transform", "translate("+margin+","+margin+")")
+	.attr("class","scene")
+	.append("path")
+	.datum(data)
+		.attr("fill", "none")
+		.attr("stroke", "steelblue")
+		.attr("stroke-width", 1.5)
+		.attr("d", d3.line()
+		.x(function(d) { return x(d.year) })
+		.y(function(d) { return y(d.co2) })
 )
 .style("opacity", 0).transition().duration(400).style("opacity", 1)
 
 // Annotations
 
-						var bisect = d3.bisector(function(d) { return d.year; }).left;
+			var bisect = d3.bisector(function(d) { return d.year; }).left;
 
 var annotations = []
 
 if (scene==1) {
 annotations = [
 {
-		note: {
-			label: "First oil refinery erected in the US",
-		},
-		x: x(1853),
-		y: y(data[bisect(data, 1853)].co2),
-		dy: -25,
-		dx: -25
+	note: {
+		label: "First oil refinery erected in the US",
+	},
+	x: x(1853),
+	y: y(data[bisect(data, 1853)].co2),
+	dy: -25,
+	dx: -25
 },
 {
-		note: {
-			label: "Invention of the automobile",
-		},
-		x: x(1886),
-		y: y(data[bisect(data, 1886)].co2),
-		dy: -75,
-		dx: -75
+	note: {
+		label: "Invention of the automobile",
+	},
+	x: x(1886),
+	y: y(data[bisect(data, 1886)].co2),
+	dy: -75,
+	dx: -75
 },
 ]
 };
@@ -168,49 +185,49 @@ annotations = [
 if (scene==2) {
 annotations = [
 {
-		note: {
-			label: "WW1 Begins",
-		},
-		x: x(1914),
-		y: y(data[bisect(data, 1914)].co2),
-		dy: 20,
-		dx: 20
+	note: {
+		label: "WW1 Begins",
+	},
+	x: x(1914),
+	y: y(data[bisect(data, 1914)].co2),
+	dy: 20,
+	dx: 20
 },
 {
-		note: {
-			label: "The Great Depression",
-		},
-		x: x(1929),	
-		y: y(data[bisect(data, 1929)].co2),
-		dy: -20,
-		dx: -20
+	note: {
+		label: "The Great Depression",
+	},
+	x: x(1929),	
+	y: y(data[bisect(data, 1929)].co2),
+	dy: -20,
+	dx: -20
 },
 {
-		note: {
-			label: "WW2 Begins",
-		},
-		x: x(1939),
-		y: y(data[bisect(data, 1939)].co2),
-		dy: 36,
-		dx: 36
+	note: {
+		label: "WW2 Begins",
+	},
+	x: x(1939),
+	y: y(data[bisect(data, 1939)].co2),
+	dy: 36,
+	dx: 36
 },
 {
-		note: {
-			label: "Cuban Missile Crisis",
-		},
-		x: x(1962),
-		y: y(data[bisect(data, 1962)].co2),
-		dy: 25,
-		dx: 25
+	note: {
+		label: "Cuban Missile Crisis",
+	},
+	x: x(1962),
+	y: y(data[bisect(data, 1962)].co2),
+	dy: 25,
+	dx: 25
 },
 {
-		note: {
-			label: "Energy crisis",
-		},
-		x: x(1979),
-		y: y(data[bisect(data, 1979)].co2),
-		dy: -25,
-		dx: -25
+	note: {
+		label: "Energy crisis",
+	},
+	x: x(1979),
+	y: y(data[bisect(data, 1979)].co2),
+	dy: -25,
+	dx: -25
 }
 ]
 };
@@ -218,31 +235,31 @@ annotations = [
 if (scene==3) {
 annotations = [
 {
-		note: {
-			label: "Outbreak of COVID-19",
-		},
-		x: x(2020),
-		y: y(data[bisect(data, 2020)].co2),
-		dy: 100,
-		dx: -100
+	note: {
+		label: "Outbreak of COVID-19",
+	},
+	x: x(2020),
+	y: y(data[bisect(data, 2020)].co2),
+	dy: 100,
+	dx: -100
 },
 {
-		note: {
-			label: "Paris Climate Accords signed",
-		},
-		x: x(2016),
-		y: y(data[bisect(data, 2016)].co2),
-		dy: -10,
-		dx: 10
+	note: {
+		label: "Paris Climate Accords signed",
+	},
+	x: x(2016),
+	y: y(data[bisect(data, 2016)].co2),
+	dy: -10,
+	dx: 10
 },
 {
-		note: {
-			label: "Housing Crisis",
-		},
-		x: x(2008),
-		y: y(data[bisect(data, 2008)].co2),
-		dy: -40,
-		dx: 40
+	note: {
+		label: "Housing Crisis",
+	},
+	x: x(2008),
+	y: y(data[bisect(data, 2008)].co2),
+	dy: -40,
+	dx: 40
 }
 ]
 };
@@ -260,73 +277,73 @@ var bisectDate = d3.bisector(function(d) { return d.year; }).left
 
 var focus = d3.select("svg").append("g")
 .attr("transform", "translate("+margin+","+margin+")")
-						.attr("class", "focus")
-						.style("display", "none");
+			.attr("class", "focus")
+			.style("display", "none");
 
-				focus.append("circle")
-						.attr("r", 5);
+		focus.append("circle")
+			.attr("r", 5);
 
-				focus.append("rect")
-						.attr("class", "tooltip")
-						.attr("width", 150)
-						.attr("height", 75)
-						.attr("x", 10)
-						.attr("y", -22)
-						.attr("rx", 4)
-						.attr("ry", 4);
+		focus.append("rect")
+			.attr("class", "tooltip")
+			.attr("width", 150)
+			.attr("height", 75)
+			.attr("x", 10)
+			.attr("y", -22)
+			.attr("rx", 4)
+			.attr("ry", 4);
 
-				focus.append("text")
-						.attr("class", "tooltip-date")
-						.attr("x", 18)
-						.attr("y", -2);
+		focus.append("text")
+			.attr("class", "tooltip-date")
+			.attr("x", 18)
+			.attr("y", -2);
 
-				focus.append("text")
-						.attr("x", 18)
-						.attr("y", 18)
-						.text("Total CO2:");
+		focus.append("text")
+			.attr("x", 18)
+			.attr("y", 18)
+			.text("Total CO2:");
 
-				focus.append("text")
-						.attr("class", "tooltip-co2")
-						.attr("x", 100)
-						.attr("y", 18);
+		focus.append("text")
+			.attr("class", "tooltip-co2")
+			.attr("x", 100)
+			.attr("y", 18);
 
-				focus.append("text")
-						.attr("x", 18)
-						.attr("y", 38)
-						.text("CO2/Capita:");
+		focus.append("text")
+			.attr("x", 18)
+			.attr("y", 38)
+			.text("CO2/Capita:");
 
-				focus.append("text")
-						.attr("class", "tooltip-cpc")
-						.attr("x", 100)
-						.attr("y", 38);
+		focus.append("text")
+			.attr("class", "tooltip-cpc")
+			.attr("x", 100)
+			.attr("y", 38);
 
-				d3.select("svg").append("rect")
-				.attr("transform", "translate("+margin+","+margin+")")
-						.attr("class", "overlay")
-						.attr("width", width)
-						.attr("height", height)
-						.on("mouseover", function() { focus.style("display", null); })
-						.on("mouseout", function() { focus.style("display", "none"); })
-						.on("mousemove", mousemove);
+		d3.select("svg").append("rect")
+		.attr("transform", "translate("+margin+","+margin+")")
+			.attr("class", "overlay")
+			.attr("width", width)
+			.attr("height", height)
+			.on("mouseover", function() { focus.style("display", null); })
+			.on("mouseout", function() { focus.style("display", "none"); })
+			.on("mousemove", mousemove);
 
-				// Update tooltip to follow mouse
-				function mousemove() {
-				try {
-						var x0 = x.invert(d3.mouse(this)[0]),
-								i = bisectDate(data, x0, 1),
-								d0 = data[i - 1],
-								d1 = data[i],
-								d = x0 - d0.year > d1.year - x0 ? d1 : d0;
-						focus.attr("transform", "translate(" + (x(d.year)+margin) + "," + (y(d.co2)+margin) + ")")
-						.style("opacity", 1);
-						focus.select(".tooltip-date").text(d.year);
-						focus.select(".tooltip-co2").text(d.co2);
-						focus.select(".tooltip-cpc").text(d.co2_per_capita);
-				}
-				catch (err) {
-				focus.style("opacity", 0)
-				}
-				}
+		// Update tooltip to follow mouse
+		function mousemove() {
+		try {
+			var x0 = x.invert(d3.mouse(this)[0]),
+				i = bisectDate(data, x0, 1),
+				d0 = data[i - 1],
+				d1 = data[i],
+				d = x0 - d0.year > d1.year - x0 ? d1 : d0;
+			focus.attr("transform", "translate(" + (x(d.year)+margin) + "," + (y(d.co2)+margin) + ")")
+			.style("opacity", 1);
+			focus.select(".tooltip-date").text(d.year);
+			focus.select(".tooltip-co2").text(d.co2);
+			focus.select(".tooltip-cpc").text(d.co2_per_capita);
+		}
+		catch (err) {
+		focus.style("opacity", 0)
+		}
+		}
 });
 
 }
